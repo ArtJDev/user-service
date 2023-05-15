@@ -1,27 +1,18 @@
 package ru.juniorhub.userservice.services;
 
-import io.r2dbc.spi.Parameter;
-import org.springframework.core.io.buffer.DataBufferUtils;
-import org.springframework.data.r2dbc.core.R2dbcEntityTemplate;
-import org.springframework.http.codec.multipart.FilePart;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import ru.juniorhub.userservice.dto.UserDto;
-import ru.juniorhub.userservice.entity.Avatar;
 import ru.juniorhub.userservice.entity.User;
 import ru.juniorhub.userservice.entity.UserStack;
 import ru.juniorhub.userservice.repositories.UserRepository;
-
-import java.io.*;
 
 @Service
 public class UserService {
 
     private final UserRepository userRepository;
-
-
 
     public UserService(UserRepository userRepository) {
         this.userRepository = userRepository;
@@ -33,29 +24,40 @@ public class UserService {
         return userRepository.findAll();
     }
 
-    public Mono<UserDto> getProfile(String username) {
-        User user = new User(null, username,null, null,null, null,
+    public Mono<UserDto> getProfile(Jwt principal) {
+        String username = principal.getClaims().get("preferred_username").toString();
+        String firstName = principal.getClaims().get("given_name").toString();
+        String lastName = principal.getClaims().get("family_name").toString();
+        User user = new User(null, username, firstName, lastName, null, null,
                 null, null, null, null, null,
                 null, null, null
         );
-        Mono<UserDto> userDto = userRepository.findUserByUsername(username)
+        return userRepository.findUserByUsername(username)
                 .switchIfEmpty(userRepository.save(user)).map(savedUser -> savedUser.userDto(savedUser));
-
-        return userDto;
     }
 
-    public Mono<User> updateUser(String username, UserDto userDto) {
-        return userRepository.updateUser(username, userDto.firstName(),
-                userDto.lastName(), userDto.nickName(), userDto.birthDate(), userDto.country(),
-                userDto.city(), userDto.phoneNumber(), userDto.email(), userDto.gitHubLink(),
-                userDto.telegram(), userDto.bio()
-        );
-
+    public Mono<User> updateUser(Jwt principal, UserDto userDto) {
+        String username = principal.getClaims().get("preferred_username").toString();
+        return userRepository.findUserByUsername(username)
+                .map(userToUpdate -> new User(userToUpdate.id(),
+                        userToUpdate.username(),
+                        userDto.firstName(),
+                        userDto.lastName(),
+                        userDto.nickName(),
+                        userDto.birthDate(),
+                        userDto.country(),
+                        userDto.city(),
+                        userDto.phoneNumber(),
+                        userDto.email(),
+                        userDto.gitHubLink(),
+                        userDto.telegram(),
+                        userDto.bio(),
+                        userToUpdate.roles()
+                ))
+                .flatMap(userRepository::save);
     }
 
     public Flux<UserStack> getUserStack(String username) {
         return userRepository.findStackByUsername(username);
     }
-
-
 }
