@@ -1,9 +1,12 @@
 server:
   port: 9001
   shutdown: graceful
-  netty:
+  tomcat:
     connection-timeout: 2s
-    idle-timeout: 15s
+    keep-alive-timeout: 15s
+    threads:
+      max: 50
+      min-spare: 5
 
 spring:
   application:
@@ -15,15 +18,16 @@ spring:
       resourceserver:
         jwt:
           issuer-uri: http://localhost:8080/realms/JuniorHub
-  r2dbc:
+  jpa:
+    generate-ddl: false
+    hibernate:
+      ddl-auto: validate
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    show-sql: true
+  datasource:
+    url: jdbc:postgresql://localhost:5432/juniorhubdb_user
     username: user
     password: password
-    url: r2dbc:postgresql://localhost:5432/juniorhubdb_user
-    pool:
-      max-create-connection-time: 2s
-      initial-size: 5
-      max-size: 10
-  flyway:
-    user: ${spring.r2dbc.username}
-    password: ${spring.r2dbc.password}
-    url: jdbc:postgresql://localhost:5432/juniorhubdb_user
+    hikari:
+      connection-timeout: 2000 #ms
+      maximum-pool-size: 5

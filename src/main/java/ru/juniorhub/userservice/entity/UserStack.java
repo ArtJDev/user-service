@@ -1,18 +1,22 @@
 package ru.juniorhub.userservice.entity;
 
-import org.springframework.data.annotation.Id;
-import org.springframework.data.relational.core.mapping.MappedCollection;
-import org.springframework.data.relational.core.mapping.Table;
 
-import java.util.List;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-@Table("user_stack")
-public record UserStack(
-        @Id
-        Long id,
-        String username,
-        String specialty,
-        @MappedCollection(idColumn = "id")
-        List<String> stack
-) {
+import javax.persistence.*;
+
+@Entity
+@Table(name = "user_stack")
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+public class UserStack {
+    @Id
+    Long id;
+    String username;
+    String specialty;
+    String stack;
+    Boolean approved;
 }

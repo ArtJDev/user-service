@@ -12,23 +12,21 @@ CREATE TABLE users
     email        varchar,
     git_hub_link varchar,
     telegram     varchar,
-    bio          varchar(2000),
+    bio          text,
     roles        varchar
 );
-CREATE TABLE roles
-(
-    id    BIGSERIAL PRIMARY KEY NOT NULL,
-    roles varchar
-);
+
 CREATE TABLE user_stack
 (
     id        BIGSERIAL PRIMARY KEY NOT NULL,
     username  varchar,
     specialty varchar,
-    stack     varchar
+    stack     varchar,
+    approved  boolean
 );
-CREATE TABLE stack
+
+CREATE TABLE roles
 (
-    id    BIGSERIAL PRIMARY KEY NOT NULL,
-    stack varchar
+    user_id bigint,
+    roles   varchar
 )

@@ -1,23 +1,41 @@
 package ru.juniorhub.userservice.config;
 
 import org.springframework.context.annotation.Bean;
-import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
-import org.springframework.security.config.web.server.ServerHttpSecurity;
-import org.springframework.security.web.server.SecurityWebFilterChain;
-import org.springframework.security.web.server.savedrequest.NoOpServerRequestCache;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.annotation.web.configurers.oauth2.server.resource.OAuth2ResourceServerConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
+import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
+import org.springframework.security.web.SecurityFilterChain;
 
-@EnableWebFluxSecurity
+@EnableWebSecurity
 public class SecurityConfig {
     @Bean
-    SecurityWebFilterChain filterChain(ServerHttpSecurity http) {
+    SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         return http
-                .authorizeExchange(exchange -> exchange
-                        .anyExchange().authenticated()
+                .authorizeHttpRequests(authorize -> authorize
+                        .mvcMatchers("/v3/api-docs/**",
+                                "/webjars/**",
+                                "/swagger-ui.html").permitAll()
+                        .anyRequest().authenticated()
                 )
-                .oauth2ResourceServer(ServerHttpSecurity.OAuth2ResourceServerSpec::jwt)
-                .requestCache(requestCacheSpec ->
-                        requestCacheSpec.requestCache(NoOpServerRequestCache.getInstance()))
-                .csrf(ServerHttpSecurity.CsrfSpec::disable)
+                .oauth2ResourceServer(OAuth2ResourceServerConfigurer::jwt)
+                .sessionManagement(sessionManagement ->
+                        sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .csrf(AbstractHttpConfigurer::disable)
                 .build();
+    }
+
+    @Bean
+    public JwtAuthenticationConverter jwtAuthenticationConverter() {
+        var jwtGrantedAuthoritiesConverter = new JwtGrantedAuthoritiesConverter();
+        jwtGrantedAuthoritiesConverter.setAuthorityPrefix("ROLE_");
+        jwtGrantedAuthoritiesConverter.setAuthoritiesClaimName("roles");
+
+        var jwtAuthenticationConverter = new JwtAuthenticationConverter();
+        jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(jwtGrantedAuthoritiesConverter);
+        return jwtAuthenticationConverter;
     }
 }
